@@ -1,0 +1,101 @@
+services:
+  accompflow-db:
+    image: postgres:16-alpine
+    container_name: accompflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-accompflow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-accompflow}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-accompflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - accompflow-net
+
+  accompflow-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: accompflow-backend
+    restart: unless-stopped
+    depends_on:
+      accompflow-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${DB_USER:-accompflow}:${DB_PASSWORD}@accompflow-db:5432/${DB_NAME:-accompflow}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 1440
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      UPLOAD_DIR: /data/client_documents
+      MAX_FILE_SIZE: "52428800"
+      SMTP_HOST: host.docker.internal
+      SMTP_PORT: "25"
+      SENDER_EMAIL: ${SENDER_EMAIL:-contact@example.com}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:8102}
+      # ajoutez votre domaine de prod à cette liste, ex: https://accompflow.exemple.com
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:8102","http://localhost:3000","http://127.0.0.1:3000","http://127.0.0.1:8102"]}'
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      TZ: Europe/Paris
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./data/client_documents:/data/client_documents
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:8101:8000"
+    networks:
+      - accompflow-net
+
+  accompflow-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api
+    container_name: accompflow-frontend
+    restart: unless-stopped
+    depends_on:
+      - accompflow-backend
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:8102:3000"
+    networks:
+      - accompflow-net
+
+  accompflow-backup:
+    profiles: ["prod"]
+    image: postgres:16-alpine
+    container_name: accompflow-backup
+    restart: unless-stopped
+    depends_on:
+      accompflow-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      TZ: Europe/Paris
+    volumes:
+      - /mnt/backup/accompflow:/backups
+    entrypoint: >
+      sh -c "
+        while true; do
+          pg_dump -h accompflow-db -U ${DB_USER:-accompflow} ${DB_NAME:-accompflow} > /backups/dump_$$(date +%Y%m%d_%H%M%S).sql
+          find /backups -name 'dump_*.sql' -mtime +30 -delete
+          sleep 86400
+        done
+      "
+    networks:
+      - accompflow-net
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  accompflow-net:
+    driver: bridge

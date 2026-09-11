@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<style>
+  body { font-family: sans-serif; color: #1f2937; font-size: 12px; }
+  h1 { color: #1e3a5f; font-size: 20px; margin-bottom: 4px; }
+  .sous-titre { color: #6b7280; margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
+  th { background: #f9fafb; }
+  tr.totaux td { font-weight: bold; }
+  .niveau-N1 { color: #1e40af; }
+  .niveau-N2 { color: #115e59; }
+  .niveau-N3 { color: #6b21a8; }
+</style>
+</head>
+<body>
+  <h1>AccompFlow — Rapport d'intervention</h1>
+  <p class="sous-titre"><strong>{{ client.nom }}</strong> — période du {{ periode_debut }} au {{ periode_fin }}</p>
+
+  <table>
+    <tr><th>Niveau</th><th>Forfait</th><th>Consommé</th><th>%</th></tr>
+    <tr>
+      <td>N1 — Assistance</td>
+      <td>{{ n1.forfait_h }}h</td>
+      <td>{{ "%.1f"|format(n1.consomme_minutes / 60) }}h</td>
+      <td>{{ n1.pourcentage }}%</td>
+    </tr>
+    <tr>
+      <td>N2 — Optimisation</td>
+      <td>{{ n2.forfait_h }}h</td>
+      <td>{{ "%.1f"|format(n2.consomme_minutes / 60) }}h</td>
+      <td>{{ n2.pourcentage }}%</td>
+    </tr>
+    <tr>
+      <td>N3 — Conseil (hors forfait)</td>
+      <td>—</td>
+      <td>{{ "%.1f"|format(n3.consomme_minutes / 60) }}h</td>
+      <td>—</td>
+    </tr>
+    <tr class="totaux">
+      <td>Heures supp.</td>
+      <td>—</td>
+      <td>{{ "%.1f"|format(heures_supp_minutes / 60) }}h</td>
+      <td>—</td>
+    </tr>
+  </table>
+
+  <h2>Détail des interventions</h2>
+  <table>
+    <tr><th>Date</th><th>Niveau</th><th>Durée</th><th>Description</th></tr>
+    {% for i in interventions %}
+    <tr>
+      <td>{{ i.date_intervention }}</td>
+      <td class="niveau-{{ i.niveau }}">{{ i.niveau }}</td>
+      <td>{{ "%d:%02d"|format(i.duree_minutes // 60, i.duree_minutes % 60) }}</td>
+      <td>{{ i.description }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Aucune intervention sur cette période.</td></tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
