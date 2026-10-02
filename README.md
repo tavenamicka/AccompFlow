@@ -4,6 +4,20 @@ Application de suivi pour coachs et consultants : gestion des clients, des inter
 
 > **Statut** : prototype fonctionnel, utilisé en production sur un déploiement personnel. Publié pour être partagé avec la communauté — les retours, issues et PR sont bienvenus.
 
+## Aperçu
+
+Captures réalisées sur des données fictives.
+
+| Portail client | Vue d'ensemble admin |
+|---|---|
+| ![Portail client : consommation N1/N2/N3 et échéanciers](docs/screenshots/portail-client.png) | ![Vue d'ensemble admin : alertes de dépassement de forfait](docs/screenshots/admin-vue-ensemble.png) |
+
+| Liste des clients | Fiche client : interventions et consommation |
+|---|---|
+| ![Liste des clients](docs/screenshots/admin-clients.png) | ![Fiche client : période, jauges, interventions et historique](docs/screenshots/admin-fiche-client-interventions.png) |
+
+![Fiche client : échéanciers de paiement multiples](docs/screenshots/admin-fiche-client-echeanciers.png)
+
 ## Origine du projet
 
 AccompFlow est une **évolution de ForfaitFlow**, qui fusionne son moteur de suivi de forfaits avec un portail client (documents, invitations, jauges de consommation) et y ajoute de nouvelles fonctionnalités : gestion des rôles (owner/staff/client), architecture prête pour du multi-organisation, rapports enrichis, etc.
