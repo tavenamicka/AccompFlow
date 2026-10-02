@@ -21,6 +21,7 @@ class ClientUpdate(BaseModel):
     date_debut_contrat: Optional[date] = None
     forfait_n1_h: Optional[int] = None
     forfait_n2_h: Optional[int] = None
+    echeanciers_actif: Optional[bool] = None
     notes: Optional[str] = None
 
 
@@ -34,6 +35,7 @@ class ClientOut(BaseModel):
     forfait_n1_h: int
     forfait_n2_h: int
     actif: bool
+    echeanciers_actif: bool
     notes: Optional[str]
     created_at: datetime
     updated_at: datetime

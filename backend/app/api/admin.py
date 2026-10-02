@@ -31,13 +31,18 @@ def list_users(
     db: Session = Depends(get_db),
 ):
     users = db.query(User).filter(User.role == "client", User.org_id == org.id).order_by(User.name).all()
-    client_ids = dict(
-        db.query(Client.user_id, Client.id)
+    fiches = dict(
+        (user_id, (client_id, actif))
+        for user_id, client_id, actif in db.query(Client.user_id, Client.id, Client.actif)
         .filter(Client.org_id == org.id, Client.user_id.isnot(None))
         .all()
     )
     return [
-        UserWithClientOut(**UserOut.model_validate(user).model_dump(), client_id=client_ids.get(user.id))
+        UserWithClientOut(
+            **UserOut.model_validate(user).model_dump(),
+            client_id=fiches.get(user.id, (None, None))[0],
+            client_actif=fiches.get(user.id, (None, None))[1],
+        )
         for user in users
     ]
 

@@ -1,20 +1,31 @@
-from datetime import datetime, timezone
+import hashlib
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.core.deps import get_current_user
 from app.core.limiter import limiter
+from app.core.mail import send_password_reset_email
 from app.core.security import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.models.client import Client
 from app.models.invitation import Invitation
+from app.models.password_reset import PasswordReset
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth import ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordRequest, TokenResponse
 from app.schemas.user import UserOut
 from app.services.organizations import get_default_organization
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+RESET_TOKEN_TTL = timedelta(hours=1)
+
+
+def _hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -73,6 +84,63 @@ def register(request: Request, payload: RegisterRequest, db: Session = Depends(g
 
     token = create_access_token(subject=str(user.id), email=user.email)
     return TokenResponse(token=token, user=UserOut.model_validate(user))
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    # Réponse identique que le compte existe ou non (pas d'énumération d'emails).
+    generic = {"detail": "Si un compte existe pour cet email, un lien de réinitialisation vient d'être envoyé."}
+
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if user is None:
+        return generic
+
+    # Un seul lien actif par compte : les précédents sont invalidés.
+    db.query(PasswordReset).filter(PasswordReset.user_id == user.id, PasswordReset.used.is_(False)).update({"used": True})
+
+    token = secrets.token_urlsafe(32)
+    db.add(
+        PasswordReset(
+            user_id=user.id,
+            token_hash=_hash_reset_token(token),
+            expires_at=datetime.now(timezone.utc) + RESET_TOKEN_TTL,
+        )
+    )
+    db.commit()
+
+    reset_url = f"{settings.frontend_base_url}/auth/reset-password/{token}"
+    try:
+        send_password_reset_email(user.email, user.name, reset_url)
+    except OSError:
+        # Déjà loggé par send_mail ; même réponse qu'un compte inexistant pour
+        # ne rien révéler au client.
+        pass
+    return generic
+
+
+@router.post("/reset-password")
+@limiter.limit("10/minute")
+def reset_password(request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    reset = db.query(PasswordReset).filter(PasswordReset.token_hash == _hash_reset_token(payload.token)).first()
+    if reset is None or reset.used:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lien invalide ou déjà utilisé")
+    expires_at = reset.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)  # SQLite (tests)
+    if expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lien expiré")
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mot de passe trop court (8 caractères minimum)")
+
+    user = db.get(User, reset.user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Lien invalide ou déjà utilisé")
+
+    user.password_hash = hash_password(payload.password)
+    db.query(PasswordReset).filter(PasswordReset.user_id == user.id, PasswordReset.used.is_(False)).update({"used": True})
+    db.commit()
+    return {"detail": "Mot de passe mis à jour"}
 
 
 @router.get("/me", response_model=UserOut)

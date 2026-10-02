@@ -18,3 +18,20 @@ h3,
 h4 {
   font-family: var(--font-heading), system-ui, sans-serif;
 }
+
+/* Échéanciers : ligne compacte en tableau sur carte large, repliée en champs
+   étiquetés sur carte étroite (largeur du conteneur, pas de l'écran). */
+.ech-wrap { container-type: inline-size; }
+.ech-grid {
+  display: grid;
+  grid-template-columns: 130px 130px 90px minmax(100px, 1fr) 128px 130px 32px;
+  gap: 8px;
+  align-items: center;
+}
+.ech-lbl { display: none; }
+@container (max-width: 799px) {
+  .ech-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .ech-head { display: none; }
+  .ech-lbl { display: block; }
+  .ech-actions { justify-self: end; }
+}

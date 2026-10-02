@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -23,6 +23,7 @@ class Client(Base):
     forfait_n1_h: Mapped[int] = mapped_column(Integer, default=4)
     forfait_n2_h: Mapped[int] = mapped_column(Integer, default=3)
     actif: Mapped[bool] = mapped_column(Boolean, default=True)
+    echeanciers_actif: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(

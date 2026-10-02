@@ -15,8 +15,11 @@ AccompFlow est une **évolution de ForfaitFlow**, qui fusionne son moteur de sui
 - Gestion des clients et de leurs forfaits (paliers N1/N2)
 - Suivi des interventions et calcul de consommation par période
 - Alertes automatiques de dépassement de forfait
+- Descriptions d'intervention multi-ligne (retours à la ligne conservés à l'écran et dans les exports)
 - Génération de rapports PDF et Excel
 - Portail client : documents partagés, jauges de consommation, invitations par email
+- Échéanciers de paiement multiples par client, activables par l'admin
+- Date de début de contrat modifiable (les périodes sont recalculées) et email de connexion modifiable par chaque utilisateur
 - Authentification par rôles (owner / staff / client)
 - Architecture multi-organisation (SaaS-ready)
 

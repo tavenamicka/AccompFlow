@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import type { Client, ClientDashboard, Intervention, PeriodeResume } from "@/lib/types";
 import { formatDateOnly, formatHeures, telechargerBlob } from "@/lib/utils";
 import { BlocNiveau } from "@/components/BlocNiveau";
+import { EcheanciersSection } from "@/components/EcheanciersSection";
 import { InterventionsTable } from "@/components/InterventionsTable";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -27,6 +28,10 @@ export default function FicheClientPage() {
   const [inviting, setInviting] = useState(false);
   const [invitationUrl, setInvitationUrl] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [editingDate, setEditingDate] = useState(false);
+  const [dateDebut, setDateDebut] = useState("");
+  const [savingDate, setSavingDate] = useState(false);
+  const [dateError, setDateError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -93,6 +98,21 @@ export default function FicheClientPage() {
       setInviteError(err?.response?.data?.detail ?? "Échec de la création de l'invitation.");
     } finally {
       setInviting(false);
+    }
+  };
+
+  const sauvegarderDateDebut = async () => {
+    if (!client || !dateDebut) return;
+    setSavingDate(true);
+    setDateError(null);
+    try {
+      await api.patch(`/clients/${client.id}`, { date_debut_contrat: dateDebut });
+      setEditingDate(false);
+      await load();
+    } catch (err: any) {
+      setDateError(err?.response?.data?.detail ?? "Échec de la mise à jour de la date.");
+    } finally {
+      setSavingDate(false);
     }
   };
 
@@ -171,9 +191,46 @@ export default function FicheClientPage() {
         {inviteError && <p className="mt-2 text-sm text-red-600">{inviteError}</p>}
       </Card>
 
-      <p className="text-sm text-slate-500">
-        Période du {formatDateOnly(dashboard.periode_debut)} au {formatDateOnly(dashboard.periode_fin)}
-      </p>
+      <EcheanciersSection client={client} onClientChanged={setClient} />
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+        <p>
+          Période du {formatDateOnly(dashboard.periode_debut)} au {formatDateOnly(dashboard.periode_fin)}
+        </p>
+        {editingDate ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sauvegarderDateDebut();
+            }}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <label htmlFor="date-debut-contrat" className="text-slate-600">Début du contrat</label>
+            <input
+              id="date-debut-contrat"
+              type="date"
+              required
+              value={dateDebut}
+              onChange={(e) => setDateDebut(e.target.value)}
+              className="rounded-xl border border-black/10 bg-white px-3 py-1.5 text-slate-800"
+            />
+            <Button type="submit" disabled={savingDate}>{savingDate ? "…" : "Enregistrer"}</Button>
+            <Button type="button" variant="secondary" onClick={() => setEditingDate(false)}>Annuler</Button>
+          </form>
+        ) : (
+          <button
+            className="text-brand hover:underline"
+            onClick={() => {
+              setDateDebut(client.date_debut_contrat);
+              setDateError(null);
+              setEditingDate(true);
+            }}
+          >
+            Début du contrat : {formatDateOnly(client.date_debut_contrat)} — modifier
+          </button>
+        )}
+        {dateError && <span className="text-red-600">{dateError}</span>}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <BlocNiveau label="N1 — Assistance" niveau="N1" conso={dashboard.n1} />

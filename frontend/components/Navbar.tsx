@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth";
+import { Logo } from "@/components/Logo";
 import { IconHome, IconRemote, IconDocument, IconProfile, IconShield, IconLogout } from "@/components/icons";
 
 const HOME_LINK = { href: "/dashboard", label: "Accueil", icon: IconHome };
@@ -17,20 +18,12 @@ const ADMIN_LINK = { href: "/admin", label: "Admin", icon: IconShield };
 export function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const isStaff = user?.role === "owner" || user?.role === "staff";
-  // Le staff gère "à distance" et "documents" côté clients depuis /admin :
-  // pas besoin de ces liens (personnels) dans sa propre barre de navigation.
-  const links = isStaff
-    ? [HOME_LINK, PROFILE_LINK, ADMIN_LINK]
-    : [HOME_LINK, ...CLIENT_LINKS, PROFILE_LINK];
 
   return (
     <>
       <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between px-4 pb-4 pt-8">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white">
-            <IconHome width={18} height={18} />
-          </span>
+          <Logo />
           <span className="font-heading text-lg font-bold tracking-tight text-slate-800">AccompFlow</span>
         </div>
         <div className="flex items-center gap-3">
@@ -48,8 +41,21 @@ export function Navbar() {
           </button>
         </div>
       </header>
+    </>
+  );
+}
 
-      <nav aria-label="Navigation principale" className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+export function NavMenu() {
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const isStaff = user?.role === "owner" || user?.role === "staff";
+  const links = isStaff
+    ? [HOME_LINK, PROFILE_LINK, ADMIN_LINK]
+    : [HOME_LINK, ...CLIENT_LINKS, PROFILE_LINK];
+
+  return (
+    <>
+      <nav aria-label="Navigation principale" className="relative z-40 flex justify-center px-4 pb-2 pt-8">
         <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-white p-1.5 shadow-[0_18px_40px_-14px_rgba(60,40,25,0.35)]">
           {links.map((link) => {
             const active = pathname === link.href;

@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import type { ClientDashboard } from "@/lib/types";
 import { formatDateOnly } from "@/lib/utils";
 import { BlocNiveau } from "@/components/BlocNiveau";
+import { EcheanciersClient } from "@/components/EcheanciersClient";
 import { Card } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { IconRemote, IconDocument, IconProfile } from "@/components/icons";
@@ -79,6 +80,8 @@ export default function DashboardHomePage() {
           </div>
         </div>
       )}
+
+      <EcheanciersClient />
 
       <div className="grid gap-5 sm:grid-cols-3">
         {ITEMS.map(({ href, icon: Icon, title, description }) => (

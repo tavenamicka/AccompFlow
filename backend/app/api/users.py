@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
 from app.core.security import hash_password, verify_password
 from app.database import get_db
+from app.models.client import Client
 from app.models.user import User
 from app.schemas.user import ChangePasswordRequest, UserOut, UserUpdate
 
@@ -20,6 +22,17 @@ def update_me(
         current_user.name = payload.name
     if payload.phone is not None:
         current_user.phone = payload.phone
+    if payload.email is not None:
+        nouvel_email = payload.email.lower()
+        if nouvel_email != current_user.email.lower():
+            deja_pris = db.query(User).filter(func.lower(User.email) == nouvel_email, User.id != current_user.id).first()
+            if deja_pris is not None:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cette adresse email est déjà utilisée")
+            current_user.email = nouvel_email
+            # Garde la fiche client liée synchronisée avec l'email de connexion.
+            fiche = db.query(Client).filter(Client.user_id == current_user.id).first()
+            if fiche is not None:
+                fiche.email = nouvel_email
     db.commit()
     db.refresh(current_user)
     return current_user

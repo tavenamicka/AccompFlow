@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Input } from "@/components/ui/Input";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -130,30 +131,15 @@ export default function ClientsPage() {
                   <span className="rounded-full bg-sand/70 px-2.5 py-1 text-xs font-semibold text-slate-600">
                     {c.forfait_n1_h}h N1 · {c.forfait_n2_h}h N2
                   </span>
-                  {c.actif ? (
-                    <Button
-                      variant="secondary"
-                      disabled={pendingId === c.id}
-                      onClick={() => archiverClient(c)}
-                    >
-                      Archiver
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      disabled={pendingId === c.id}
-                      onClick={() => reactiverClient(c)}
-                    >
-                      Réactiver
-                    </Button>
-                  )}
-                  <Button
-                    variant="danger"
+                  <RowActionsMenu
                     disabled={pendingId === c.id}
-                    onClick={() => supprimerClient(c)}
-                  >
-                    {pendingId === c.id ? "…" : "Supprimer"}
-                  </Button>
+                    actions={[
+                      c.actif
+                        ? { label: "Archiver", onClick: () => archiverClient(c) }
+                        : { label: "Réactiver", onClick: () => reactiverClient(c) },
+                      { label: "Supprimer", variant: "danger", onClick: () => supprimerClient(c) },
+                    ]}
+                  />
                 </div>
               </li>
             ))}

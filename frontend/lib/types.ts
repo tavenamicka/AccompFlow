@@ -18,6 +18,7 @@ export interface Client {
   forfait_n1_h: number;
   forfait_n2_h: number;
   actif: boolean;
+  echeanciers_actif: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -109,4 +110,28 @@ export interface Invitation {
 export interface LoginResponse {
   token: string;
   user: User;
+}
+
+export type TypeEcheance = "pack" | "formation" | "autre";
+export type StatutEcheance = "attente" | "paye";
+
+export interface Echeance {
+  id: number;
+  date_facturation: string | null;
+  date_echeance: string | null;
+  montant: number | null;
+  numero_facture: string | null;
+  statut: StatutEcheance;
+  date_paiement: string | null;
+  note: string | null;
+  en_retard: boolean;
+}
+
+export interface Echeancier {
+  id: number;
+  client_id: number;
+  titre: string;
+  type_echeance: TypeEcheance;
+  notes: string | null;
+  echeances: Echeance[];
 }

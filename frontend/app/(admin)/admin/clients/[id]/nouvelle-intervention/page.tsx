@@ -7,6 +7,7 @@ import type { InterventionBloc, Niveau } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { DureeInput } from "@/components/DureeInput";
 
@@ -103,7 +104,7 @@ export default function NouvelleInterventionPage() {
                     minutes={bloc.duree_minutes}
                     onChange={(duree_minutes) => updateBloc(index, { duree_minutes })}
                   />
-                  <Input
+                  <Textarea
                     placeholder="Description"
                     value={bloc.description}
                     onChange={(e) => updateBloc(index, { description: e.target.value })}

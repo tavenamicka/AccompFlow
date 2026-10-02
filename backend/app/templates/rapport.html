@@ -9,6 +9,7 @@
   table { width: 100%; border-collapse: collapse; margin-top: 16px; }
   th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
   th { background: #f9fafb; }
+  td.description { white-space: pre-wrap; overflow-wrap: anywhere; }
   tr.totaux td { font-weight: bold; }
   .niveau-N1 { color: #1e40af; }
   .niveau-N2 { color: #115e59; }
@@ -55,7 +56,7 @@
       <td>{{ i.date_intervention }}</td>
       <td class="niveau-{{ i.niveau }}">{{ i.niveau }}</td>
       <td>{{ "%d:%02d"|format(i.duree_minutes // 60, i.duree_minutes % 60) }}</td>
-      <td>{{ i.description }}</td>
+      <td class="description">{{ i.description }}</td>
     </tr>
     {% else %}
     <tr><td colspan="4">Aucune intervention sur cette période.</td></tr>

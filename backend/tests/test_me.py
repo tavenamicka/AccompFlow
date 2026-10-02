@@ -54,3 +54,25 @@ def test_me_dashboard_ne_montre_pas_la_fiche_dun_autre_client(client, db_session
     response = client.get("/api/me/dashboard", headers=headers)
 
     assert response.status_code == 404
+
+
+def test_modifier_son_email_met_a_jour_user_et_fiche_client(client, db_session, org, make_client):
+    headers, portail_user = _client_headers(client, db_session, org)
+    fiche = make_client(user_id=portail_user.id)
+
+    response = client.put("/api/users/me", headers=headers, json={"email": "Nouveau@Exemple-Test.fr"})
+
+    assert response.status_code == 200
+    assert response.json()["email"] == "nouveau@exemple-test.fr"
+    db_session.refresh(fiche)
+    assert fiche.email == "nouveau@exemple-test.fr"
+
+
+def test_modifier_son_email_refuse_si_deja_utilise(client, db_session, org):
+    headers, _ = _client_headers(client, db_session, org)
+    db_session.add(User(org_id=org.id, email="pris@exemple-test.fr", name="Autre", password_hash=hash_password("x"), role="client"))
+    db_session.commit()
+
+    response = client.put("/api/users/me", headers=headers, json={"email": "pris@exemple-test.fr"})
+
+    assert response.status_code == 409

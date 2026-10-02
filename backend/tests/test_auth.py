@@ -89,3 +89,77 @@ def test_me_with_valid_token(client, db_session, org):
 
     assert response.status_code == 200
     assert response.json()["email"] == "jean@exemple-test.fr"
+
+
+def _request_reset(client, monkeypatch, email):
+    sent = []
+    monkeypatch.setattr("app.api.auth.send_password_reset_email", lambda to, name, url: sent.append((to, url)))
+    response = client.post("/api/auth/forgot-password", json={"email": email})
+    return response, sent
+
+
+def _token_of(sent):
+    return sent[-1][1].rsplit("/", 1)[1]
+
+
+def test_forgot_password_unknown_email_is_generic(client, monkeypatch):
+    response, sent = _request_reset(client, monkeypatch, "inconnu@exemple-test.fr")
+
+    assert response.status_code == 200
+    assert sent == []
+
+
+def test_password_reset_full_flow(client, db_session, org, monkeypatch):
+    _make_user(db_session, org, email="jean@exemple-test.fr", password="ancienmdp1")
+
+    response, sent = _request_reset(client, monkeypatch, "jean@exemple-test.fr")
+    assert response.status_code == 200
+    token = _token_of(sent)
+
+    reset = client.post("/api/auth/reset-password", json={"token": token, "password": "nouveaumdp1"})
+    assert reset.status_code == 200
+
+    assert client.post("/api/auth/login", json={"email": "jean@exemple-test.fr", "password": "ancienmdp1"}).status_code == 401
+    assert client.post("/api/auth/login", json={"email": "jean@exemple-test.fr", "password": "nouveaumdp1"}).status_code == 200
+
+    # Lien à usage unique
+    again = client.post("/api/auth/reset-password", json={"token": token, "password": "autremdp123"})
+    assert again.status_code == 400
+
+
+def test_reset_password_invalid_token(client):
+    response = client.post("/api/auth/reset-password", json={"token": "nimportequoi", "password": "nouveaumdp1"})
+    assert response.status_code == 400
+
+
+def test_reset_password_expired_token(client, db_session, org, monkeypatch):
+    from app.models.password_reset import PasswordReset
+
+    _make_user(db_session, org, email="jean@exemple-test.fr")
+    _, sent = _request_reset(client, monkeypatch, "jean@exemple-test.fr")
+    reset = db_session.query(PasswordReset).first()
+    reset.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    db_session.commit()
+
+    response = client.post("/api/auth/reset-password", json={"token": _token_of(sent), "password": "nouveaumdp1"})
+    assert response.status_code == 400
+
+
+def test_reset_password_too_short(client, db_session, org, monkeypatch):
+    _make_user(db_session, org, email="jean@exemple-test.fr")
+    _, sent = _request_reset(client, monkeypatch, "jean@exemple-test.fr")
+
+    response = client.post("/api/auth/reset-password", json={"token": _token_of(sent), "password": "court"})
+    assert response.status_code == 400
+
+
+def test_new_request_invalidates_previous_link(client, db_session, org, monkeypatch):
+    _make_user(db_session, org, email="jean@exemple-test.fr")
+    _, sent1 = _request_reset(client, monkeypatch, "jean@exemple-test.fr")
+    old_token = _token_of(sent1)
+    _, sent2 = _request_reset(client, monkeypatch, "jean@exemple-test.fr")
+
+    old = client.post("/api/auth/reset-password", json={"token": old_token, "password": "nouveaumdp1"})
+    new = client.post("/api/auth/reset-password", json={"token": _token_of(sent2), "password": "nouveaumdp1"})
+    assert old.status_code == 400
+    assert new.status_code == 200

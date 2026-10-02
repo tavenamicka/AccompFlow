@@ -11,14 +11,14 @@ class Settings(BaseSettings):
 
     admin_email: str
     admin_password: str
-    admin_name: str = "Admin"
+    admin_name: str = "Mickaël"
 
     upload_dir: str = "/data/client_documents"
     max_file_size: int = 50 * 1024 * 1024  # 50 Mo
 
     smtp_host: str = "localhost"
     smtp_port: int = 25
-    sender_email: str = "contact@example.com"
+    sender_email: str = "contact@accomp-num.tranevat.fr"
 
     frontend_base_url: str = "http://localhost:8102"
 

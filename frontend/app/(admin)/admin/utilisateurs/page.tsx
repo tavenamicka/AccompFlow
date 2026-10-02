@@ -3,22 +3,23 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 
 interface AdminUser {
   id: number;
   name: string;
   email: string;
   client_id: number | null;
+  client_actif: boolean | null;
 }
 
 export default function UtilisateursPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingId, setPendingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
@@ -38,19 +39,53 @@ export default function UtilisateursPage() {
     queueMicrotask(() => load());
   }, []);
 
-  const supprimer = async (user: AdminUser) => {
-    if (!confirm(`Supprimer définitivement le compte de ${user.name} (${user.email}) ? Cette action est irréversible.`)) {
-      return;
-    }
-    setDeletingId(user.id);
+  const archiver = async (user: AdminUser) => {
+    if (user.client_id == null) return;
+    setPendingId(user.id);
     setError(null);
     try {
-      await api.delete(`/admin/users/${user.id}`);
+      await api.post(`/clients/${user.client_id}/archiver`);
+      await load();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail ?? `Échec de l'archivage de ${user.name}.`);
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const reactiver = async (user: AdminUser) => {
+    if (user.client_id == null) return;
+    setPendingId(user.id);
+    setError(null);
+    try {
+      await api.post(`/clients/${user.client_id}/reactiver`);
+      await load();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail ?? `Échec de la réactivation de ${user.name}.`);
+    } finally {
+      setPendingId(null);
+    }
+  };
+
+  const supprimer = async (user: AdminUser) => {
+    const message =
+      user.client_id != null
+        ? `Supprimer définitivement la fiche client et le compte portail de ${user.name} (${user.email}) ? Cette action est irréversible.`
+        : `Supprimer définitivement le compte de ${user.name} (${user.email}) ? Cette action est irréversible.`;
+    if (!confirm(message)) return;
+    setPendingId(user.id);
+    setError(null);
+    try {
+      if (user.client_id != null) {
+        await api.delete(`/clients/${user.client_id}`);
+      } else {
+        await api.delete(`/admin/users/${user.id}`);
+      }
       setUsers((current) => current.filter((u) => u.id !== user.id));
     } catch (err: any) {
       setError(err?.response?.data?.detail ?? "Échec de la suppression du compte.");
     } finally {
-      setDeletingId(null);
+      setPendingId(null);
     }
   };
 
@@ -76,7 +111,9 @@ export default function UtilisateursPage() {
             {users.map((user) => (
               <li key={user.id} className="flex items-center justify-between gap-4 p-5 text-sm">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-800">{user.name}</p>
+                  <p className="truncate font-semibold text-slate-800">
+                    {user.name} {user.client_actif === false && <span className="ml-2 text-xs font-normal text-slate-400">(archivé)</span>}
+                  </p>
                   <p className="truncate text-xs text-slate-400">{user.email}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
@@ -92,11 +129,19 @@ export default function UtilisateursPage() {
                       Sans fiche client
                     </span>
                   )}
-                  {user.client_id == null && (
-                    <Button size="sm" variant="danger" disabled={deletingId === user.id} onClick={() => supprimer(user)}>
-                      {deletingId === user.id ? "Suppression…" : "Supprimer"}
-                    </Button>
-                  )}
+                  <RowActionsMenu
+                    disabled={pendingId === user.id}
+                    actions={[
+                      ...(user.client_id != null
+                        ? [
+                            user.client_actif
+                              ? { label: "Archiver", onClick: () => archiver(user) }
+                              : { label: "Réactiver", onClick: () => reactiver(user) },
+                          ]
+                        : []),
+                      { label: "Supprimer", variant: "danger" as const, onClick: () => supprimer(user) },
+                    ]}
+                  />
                 </div>
               </li>
             ))}

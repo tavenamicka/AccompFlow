@@ -6,7 +6,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from openpyxl import Workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Alignment, Font
 from sqlalchemy.orm import Session
 from weasyprint import HTML
 
@@ -95,6 +95,7 @@ def generer_excel(rapport: dict) -> bytes:
                 intervention.description,
             ]
         )
+        ws.cell(row=ws.max_row, column=4).alignment = Alignment(wrap_text=True, vertical="top")
 
     for col, width in zip("ABCD", (28, 14, 14, 50)):
         ws.column_dimensions[col].width = width

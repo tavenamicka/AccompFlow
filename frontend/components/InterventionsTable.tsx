@@ -6,7 +6,9 @@ import type { Intervention, Niveau } from "@/lib/types";
 import { formatDateOnly, formatMinutes } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { DureeInput } from "@/components/DureeInput";
 
 const NIVEAU_BADGE: Record<string, string> = {
@@ -33,6 +35,7 @@ export function InterventionsTable({
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   if (interventions.length === 0) {
     return <p className="p-6 text-center text-sm text-slate-500">Aucune intervention sur cette période.</p>;
@@ -71,6 +74,20 @@ export function InterventionsTable({
     }
   };
 
+  const supprimer = async (i: Intervention) => {
+    if (!confirm("Supprimer définitivement cette intervention ? Cette action est irréversible.")) return;
+    setDeletingId(i.id);
+    setError(null);
+    try {
+      await api.delete(`/interventions/${i.id}`);
+      onChanged?.();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail ?? "Échec de la suppression de l'intervention.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="overflow-x-auto">
       {error && <p className="px-3.5 pt-4 text-sm text-red-600">{error}</p>}
@@ -87,7 +104,7 @@ export function InterventionsTable({
         <tbody>
           {interventions.map((i) =>
             editingId === i.id && form ? (
-              <tr key={i.id} className="border-t border-black/5 bg-cream">
+              <tr key={i.id} className="border-t border-black/5 bg-cream align-top">
                 <td className="px-3.5 py-3">
                   <div className="w-36">
                     <Input
@@ -114,8 +131,8 @@ export function InterventionsTable({
                 <td className="px-3.5 py-3">
                   <DureeInput minutes={form.duree_minutes} onChange={(duree_minutes) => setForm({ ...form, duree_minutes })} />
                 </td>
-                <td className="w-full px-3.5 py-3">
-                  <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <td className="w-full min-w-[20rem] px-3.5 py-3">
+                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3">
                   <div className="flex gap-2">
@@ -137,15 +154,15 @@ export function InterventionsTable({
                   </span>
                 </td>
                 <td className="px-3.5 py-3">{formatMinutes(i.duree_minutes)}</td>
-                <td className="max-w-md truncate px-3.5 py-3">{i.description}</td>
+                <td className="max-w-md whitespace-pre-wrap break-words px-3.5 py-3">{i.description}</td>
                 <td className="whitespace-nowrap px-3.5 py-3">
-                  <button
-                    type="button"
-                    onClick={() => commencerEdition(i)}
-                    className="text-xs font-semibold text-brand hover:underline"
-                  >
-                    Modifier
-                  </button>
+                  <RowActionsMenu
+                    disabled={deletingId === i.id}
+                    actions={[
+                      { label: "Modifier", onClick: () => commencerEdition(i) },
+                      { label: "Supprimer", variant: "danger", onClick: () => supprimer(i) },
+                    ]}
+                  />
                 </td>
               </tr>
             )

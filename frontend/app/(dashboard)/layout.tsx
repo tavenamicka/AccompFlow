@@ -1,5 +1,5 @@
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Navbar } from "@/components/Navbar";
+import { Navbar, NavMenu } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div aria-hidden className="pointer-events-none absolute -left-20 top-72 h-64 w-64 rounded-full bg-brand-light/20 blur-3xl" />
         <Navbar />
         <main className="relative mx-auto w-full max-w-5xl flex-1 px-4 pt-2">{children}</main>
+        <NavMenu />
         <Footer />
       </div>
     </ProtectedRoute>

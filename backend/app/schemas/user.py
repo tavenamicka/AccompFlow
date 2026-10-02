@@ -20,10 +20,12 @@ class UserWithClientOut(UserOut):
     # généralement issu d'une invitation créée avant qu'elle ne crée
     # automatiquement la fiche).
     client_id: int | None = None
+    client_actif: bool | None = None
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
+    email: EmailStr | None = None
     phone: str | None = None
 
 

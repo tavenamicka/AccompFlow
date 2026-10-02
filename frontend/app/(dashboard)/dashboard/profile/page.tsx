@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -29,12 +30,13 @@ export default function ProfilePage() {
     setProfileSuccess(false);
     setSavingProfile(true);
     try {
-      await api.put("/users/me", { name, phone });
+      await api.put("/users/me", { name, phone, email });
       await refreshUser();
       setProfileSuccess(true);
       setEditing(false);
-    } catch {
-      setProfileError("Échec de la mise à jour du profil.");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setProfileError(typeof detail === "string" ? detail : "Échec de la mise à jour du profil (vérifiez l'adresse email).");
     } finally {
       setSavingProfile(false);
     }
@@ -76,7 +78,7 @@ export default function ProfilePage() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-medium">Informations</h2>
           {!editing && (
-            <button className="text-sm text-brand hover:underline" onClick={() => setEditing(true)}>
+            <button className="text-sm text-brand hover:underline" onClick={() => { setName(user.name); setEmail(user.email); setPhone(user.phone ?? ""); setEditing(true); }}>
               Modifier
             </button>
           )}
@@ -87,6 +89,10 @@ export default function ProfilePage() {
             <div>
               <label htmlFor="profile-nom" className="mb-1 block text-sm font-medium text-slate-700">Nom</label>
               <Input id="profile-nom" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <label htmlFor="profile-email" className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+              <Input id="profile-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
               <label htmlFor="profile-telephone" className="mb-1 block text-sm font-medium text-slate-700">Téléphone</label>

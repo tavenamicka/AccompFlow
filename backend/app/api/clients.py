@@ -5,6 +5,7 @@ from app.core.deps import get_current_org, get_current_staff
 from app.database import get_db
 from app.models.client import Client
 from app.models.document import Document
+from app.models.echeancier import Echeancier
 from app.models.intervention import Intervention
 from app.models.invitation import Invitation
 from app.models.organization import Organization
@@ -127,10 +128,11 @@ def delete_client(client_id: int, org: Organization = Depends(get_current_org), 
 
     a_des_interventions = db.query(Intervention).filter(Intervention.client_id == client_id).first() is not None
     a_des_documents = db.query(Document).filter(Document.client_id == client_id).first() is not None
-    if a_des_interventions or a_des_documents:
+    a_des_echeanciers = db.query(Echeancier).filter(Echeancier.client_id == client_id).first() is not None
+    if a_des_interventions or a_des_documents or a_des_echeanciers:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ce client a des interventions ou documents enregistrés — archivez-le plutôt que de le supprimer.",
+            detail="Ce client a des interventions, documents ou échéanciers enregistrés — archivez-le plutôt que de le supprimer.",
         )
 
     db.query(Invitation).filter(Invitation.client_id == client_id).delete()

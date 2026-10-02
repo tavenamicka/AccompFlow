@@ -33,15 +33,14 @@ services:
       JWT_EXPIRE_MINUTES: 1440
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_NAME: ${ADMIN_NAME:-Mickaël}
       UPLOAD_DIR: /data/client_documents
       MAX_FILE_SIZE: "52428800"
       SMTP_HOST: host.docker.internal
       SMTP_PORT: "25"
-      SENDER_EMAIL: ${SENDER_EMAIL:-contact@example.com}
+      SENDER_EMAIL: contact@tranevat.fr
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:8102}
-      # ajoutez votre domaine de prod à cette liste, ex: https://accompflow.exemple.com
-      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:8102","http://localhost:3000","http://127.0.0.1:3000","http://127.0.0.1:8102"]}'
+      CORS_ORIGINS: '["http://localhost:8102","http://localhost:3000","http://127.0.0.1:3000","http://127.0.0.1:8102","https://accompflow.tranevat.fr"]'
       ENVIRONMENT: ${ENVIRONMENT:-development}
       TZ: Europe/Paris
     extra_hosts:

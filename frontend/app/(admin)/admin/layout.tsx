@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/auth";
-import { IconChart, IconUsers, IconDocument, IconMail, IconProfile, IconShield, IconLogout } from "@/components/icons";
+import { IconChart, IconUsers, IconDocument, IconMail, IconProfile, IconLogout } from "@/components/icons";
+import { Logo } from "@/components/Logo";
 
 const NAV = [
   { href: "/admin", label: "Vue d'ensemble", icon: IconChart },
@@ -36,9 +37,7 @@ function AdminTopBar() {
   return (
     <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pb-4 pt-8">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white">
-          <IconShield width={18} height={18} />
-        </span>
+        <Logo />
         <span className="hidden font-heading text-lg font-bold tracking-tight text-slate-800 sm:inline">
           AccompFlow
         </span>
